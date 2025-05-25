@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-apple-gray-100 dark:bg-gray-900 text-apple-gray-text-primary dark:text-gray-100 font-sans text-base antialiased;
+  }
+  
+  ::selection {
+    @apply bg-apple-blue/20 dark:bg-apple-blue/30;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl font-semibold text-apple-gray-text-primary dark:text-white;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold text-apple-gray-text-primary dark:text-white;
+  }
+
+  h3 {
+    @apply text-xl font-medium text-apple-gray-text-primary dark:text-white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-apple-blue text-white font-medium rounded-full px-5 py-2.5 hover:opacity-90 active:scale-95 transition-all duration-200 ease-apple-ease shadow-apple-sm hover:shadow-apple-md focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:ring-offset-0;
+  }
+  
+  .btn-secondary {
+    @apply bg-white dark:bg-gray-800 text-apple-gray-text-primary dark:text-white font-medium rounded-full px-5 py-2.5 border border-apple-gray-border-primary dark:border-gray-700 hover:bg-apple-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all duration-200 ease-apple-ease shadow-apple-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:ring-offset-0;
+  }
+  
+  .btn-outline {
+    @apply bg-transparent text-apple-blue dark:text-blue-400 font-medium rounded-full px-5 py-2.5 border border-apple-blue/30 dark:border-blue-400/30 hover:bg-apple-blue/5 dark:hover:bg-blue-900/20 active:scale-95 transition-all duration-200 ease-apple-ease focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:ring-offset-0;
+  }
+  
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-apple-md overflow-hidden border border-apple-gray-border-secondary dark:border-gray-700;
+  }
+  
+  .input {
+    @apply bg-white dark:bg-gray-700 border border-apple-gray-border-primary dark:border-gray-600 rounded-xl px-4 py-2.5 text-apple-gray-text-primary dark:text-white placeholder-apple-gray-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/20 focus:border-apple-blue dark:focus:border-blue-400 transition-all duration-200 ease-apple-ease;
+  }
+  
+  .markdown-content {
+    @apply prose dark:prose-invert max-w-none prose-headings:font-medium prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-apple-gray-text-primary dark:prose-p:text-gray-300 prose-a:text-apple-link dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline;
+  }
+  
+  /* 表格增强 */
+  .markdown-content table {
+    @apply rounded-xl overflow-hidden border-collapse;
+  }
+  
+  .markdown-content thead {
+    @apply bg-apple-gray-background-light dark:bg-gray-700;
+  }
+  
+  .markdown-content th {
+    @apply px-4 py-2 text-left border-b border-apple-gray-border-secondary dark:border-gray-600 text-apple-gray-text-primary dark:text-white font-medium;
+  }
+  
+  .markdown-content td {
+    @apply px-4 py-2 border-b border-apple-gray-border-secondary dark:border-gray-700;
+  }
+  
+  /* Apple设计风格的表单组件 */
+  .form-group {
+    @apply mb-6;
+  }
+  
+  .form-label {
+    @apply block mb-2 text-sm font-medium text-apple-gray-text-primary dark:text-white;
+  }
+  
+  .form-hint {
+    @apply mt-1.5 text-xs text-apple-gray-text-secondary dark:text-gray-400;
+  }
+  
+  /* 页面布局容器 */
+  .page-container {
+    @apply container mx-auto px-4 sm:px-6 py-12 max-w-6xl;
+  }
+
+  /* 页面标题区 */
+  .page-header {
+    @apply mb-10;
+  }
+
+  /* 卡片样式 */
+  .apple-card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl border border-apple-gray-border-secondary dark:border-gray-700 hover:shadow-apple-md transition-all duration-200 ease-apple-ease overflow-hidden;
+  }
+  
+  /* 内容块样式 */
+  .content-block {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-apple-sm border border-apple-gray-border-secondary dark:border-gray-700 p-6 mb-8;
+  }
+  
+  /* 内容卡片样式 */
+  .content-card {
+    @apply bg-apple-gray-background-light dark:bg-gray-700 rounded-2xl border border-apple-gray-border-secondary dark:border-gray-600 p-5 hover:shadow-apple-sm transition-all duration-200 ease-apple-ease;
+  }
+  
+  /* 过渡效果 */
+  .fade-enter-active,
+  .fade-leave-active {
+    @apply transition-opacity duration-300 ease-apple-ease;
+  }
+  
+  .fade-enter-from,
+  .fade-leave-to {
+    @apply opacity-0;
+  }
+  
+  .slide-up-enter-active,
+  .slide-up-leave-active {
+    @apply transition-all duration-300 ease-apple-ease;
+  }
+  
+  .slide-up-enter-from,
+  .slide-up-leave-to {
+    @apply opacity-0 translate-y-4;
+  }
+} 

@@ -1,0 +1,8 @@
+django
+djangorestframework
+django-cors-headers
+drf-yasg
+djangorestframework-simplejwt
+social-auth-app-django
+openai
+requests 
