@@ -57,8 +57,8 @@
                   <div class="p-4" @click="selectConversation(conversation)">
                     <div class="flex items-center justify-between mb-1">
                       <h3 class="text-sm font-medium text-apple-gray-text-primary dark:text-white truncate pr-2">
-                        {{ conversation.title || '新对话' }}
-                      </h3>
+                      {{ conversation.title || '新对话' }}
+                    </h3>
                       
                       <!-- 对话类型标签 -->
                       <span 
@@ -158,9 +158,9 @@
                     </span>
                   </div>
                   
-                  <h2 class="text-lg font-medium text-apple-gray-text-primary dark:text-white">
-                    {{ currentConversation?.title || '新对话' }}
-                  </h2>
+              <h2 class="text-lg font-medium text-apple-gray-text-primary dark:text-white">
+                {{ currentConversation?.title || '新对话' }}
+              </h2>
                 </div>
                 
                 <!-- 对话类型标签 -->
@@ -192,16 +192,16 @@
                   <!-- 用户消息 -->
                   <div v-if="message.type === 'user'" class="flex items-start justify-end">
                     <div class="bg-apple-blue/10 dark:bg-apple-blue/20 rounded-xl px-4 py-2 max-w-md relative">
-                      <!-- 用户消息删除按钮 -->
-                      <button 
-                        v-if="message.id && !aiLoading"
-                        @click="deleteMessage(message.id)"
+                    <!-- 用户消息删除按钮 -->
+                    <button 
+                      v-if="message.id && !aiLoading"
+                      @click="deleteMessage(message.id)"
                         class="absolute left-2 top-2 p-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                       
                       <p class="text-apple-gray-text-primary dark:text-gray-200 break-words">{{ message.content }}</p>
                     </div>
@@ -218,16 +218,16 @@
                       </svg>
                     </div>
                     <div class="bg-apple-gray-background-light dark:bg-gray-700 rounded-xl px-4 py-2 max-w-md overflow-x-auto relative">
-                      <!-- AI消息删除按钮 -->
-                      <button 
-                        v-if="message.id && !aiLoading"
-                        @click="deleteMessage(message.id)"
+                    <!-- AI消息删除按钮 -->
+                    <button 
+                      v-if="message.id && !aiLoading"
+                      @click="deleteMessage(message.id)"
                         class="absolute right-2 top-2 p-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                       
                       <div class="text-apple-gray-text-primary dark:text-gray-300 markdown-body" v-html="renderMarkdown(message.content)"></div>
                     </div>
@@ -259,15 +259,15 @@
             <div class="flex-shrink-0 p-3 border-t border-apple-gray-border-secondary dark:border-gray-700">
               <form @submit.prevent="sendMessage" class="flex flex-col space-y-2">
                 <div class="relative">
-                  <textarea 
-                    v-model="newMessage" 
-                    rows="1"
-                    placeholder="输入消息..." 
+                <textarea 
+                  v-model="newMessage" 
+                  rows="1"
+                  placeholder="输入消息..." 
                     class="input w-full py-2 min-h-[44px] max-h-32 resize-none bg-apple-gray-background-light dark:bg-gray-700"
-                    :disabled="aiLoading || !currentConversation"
-                    @keydown.enter.exact.prevent="sendMessage"
-                    ref="messageInput"
-                  ></textarea>
+                  :disabled="aiLoading || !currentConversation"
+                  @keydown.enter.exact.prevent="sendMessage"
+                  ref="messageInput"
+                ></textarea>
                   
                   <!-- 引用笔记按钮 -->
                   <button 
@@ -284,16 +284,16 @@
                 </div>
                 
                 <div class="flex justify-end">
-                  <button 
-                    type="submit" 
+                <button 
+                  type="submit" 
                     class="btn-primary flex items-center"
-                    :disabled="aiLoading || !newMessage.trim() || !currentConversation"
-                  >
+                  :disabled="aiLoading || !newMessage.trim() || !currentConversation"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                    </svg>
+                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                  </svg>
                     发送
-                  </button>
+                </button>
                 </div>
               </form>
               
@@ -314,7 +314,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-                  </div>
+            </div>
                   
                   <input 
                     v-model="searchNoteQuery"
@@ -322,7 +322,7 @@
                     placeholder="搜索笔记..."
                     class="input w-full py-1 px-2 text-sm bg-apple-gray-background-light dark:bg-gray-700"
                   />
-                </div>
+          </div>
                 
                 <div class="overflow-y-auto max-h-60">
                   <div v-if="filteredNotes.length === 0" class="p-4 text-center text-apple-gray-text-secondary dark:text-gray-400 text-sm">

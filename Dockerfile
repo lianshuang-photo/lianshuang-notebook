@@ -7,6 +7,7 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV TZ=Asia/Shanghai
+ENV DB_PATH=/app/data
 
 # 安装依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -19,6 +20,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # 复制项目文件
 COPY server/requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+
+# 创建数据目录
+RUN mkdir -p /app/data
 
 # 复制项目代码
 COPY server/ /app/server/

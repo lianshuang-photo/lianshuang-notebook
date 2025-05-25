@@ -6,12 +6,13 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'ls4afcZy1EZwKIqZ61uV3Nhp1RInSTKZYiVXm5IzF'
+# 从环境变量读取密钥，提供一个默认值仅用于开发
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-do-not-use-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -70,7 +71,7 @@ WSGI_APPLICATION = 'server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.path.join(os.environ.get('DB_PATH', BASE_DIR), 'db.sqlite3'),
     }
 }
 

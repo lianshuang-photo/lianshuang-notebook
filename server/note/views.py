@@ -608,26 +608,26 @@ def ai_chat(request):
                                 if len(title) > 30:  # 如果标题太长，截断它
                                     title = title[:30] + '...'
                                 conversation.title = title
-                            
-                            # 提取类型并转换为系统中的类型
-                            if 'type' in result:
-                                type_map = {
-                                    '聊天': 'chat',
-                                    '问答': 'qa',
-                                    '分析': 'analysis',
-                                    '摘要': 'summary',
-                                    '其他': 'other'
-                                }
-                                type_text = result['type']
-                                if type_text in type_map:
-                                    conversation.conversation_type = type_map[type_text]
+                                
+                                # 提取类型并转换为系统中的类型
+                                if 'type' in result:
+                                    type_map = {
+                                        '聊天': 'chat',
+                                        '问答': 'qa',
+                                        '分析': 'analysis',
+                                        '摘要': 'summary',
+                                        '其他': 'other'
+                                    }
+                                    type_text = result['type']
+                                    if type_text in type_map:
+                                        conversation.conversation_type = type_map[type_text]
                             
                             conversation.save()
                         except Exception as json_error:
                             logger.error(f"解析AI生成的标题和类型失败: {str(json_error)}")
                             # 使用备选标题方法
                             conversation.title = message[:20] + "..." if len(message) > 20 else message
-                            conversation.save()
+                        conversation.save()
                 except Exception as title_type_error:
                     # 如果生成标题和类型失败，使用默认值，记录错误但不影响主要功能
                     logger.error(f"生成对话标题和类型失败: {str(title_type_error)}")
@@ -782,7 +782,7 @@ def ai_chat_stream(request):
     
     except Exception as e:
         logger.error(f"AI流式聊天错误: {str(e)}")
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])

@@ -312,8 +312,8 @@
           <div v-else>
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-medium text-apple-gray-text-primary dark:text-white">
-                分组成员: {{ selectedGroupName }}
-              </h3>
+              分组成员: {{ selectedGroupName }}
+            </h3>
               
               <div class="flex items-center space-x-2">
                 <!-- 创建权限模板按钮 -->
@@ -395,37 +395,37 @@
               
               <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <div class="flex-1">
-                  <select 
-                    v-model="userToAdd" 
+              <select 
+                v-model="userToAdd" 
                     class="input bg-apple-gray-background-light dark:bg-gray-700 w-full"
-                  >
-                    <option value="">-- 选择用户 --</option>
-                    <option v-for="user in usersNotInGroup" :key="user.id" :value="user.id">
-                      {{ user.username }} ({{ user.email }})
-                    </option>
-                  </select>
+              >
+                <option value="">-- 选择用户 --</option>
+                <option v-for="user in usersNotInGroup" :key="user.id" :value="user.id">
+                  {{ user.username }} ({{ user.email }})
+                </option>
+              </select>
                 </div>
-                
+              
                 <div class="w-32">
-                  <select 
-                    v-model="permissionToAdd" 
+              <select 
+                v-model="permissionToAdd" 
                     class="input bg-apple-gray-background-light dark:bg-gray-700 w-full"
-                  >
-                    <option value="read">只读</option>
-                    <option value="write">读写</option>
-                    <option value="admin">管理</option>
-                  </select>
+              >
+                <option value="read">只读</option>
+                <option value="write">读写</option>
+                <option value="admin">管理</option>
+              </select>
                 </div>
-                
+              
                 <div>
-                  <button 
-                    @click="handleAddUserToGroup" 
+              <button 
+                @click="handleAddUserToGroup" 
                     class="btn-primary w-full sm:w-auto"
-                    :disabled="!userToAdd || addingUser"
-                  >
-                    <span v-if="addingUser">添加中...</span>
-                    <span v-else>添加</span>
-                  </button>
+                :disabled="!userToAdd || addingUser"
+              >
+                <span v-if="addingUser">添加中...</span>
+                <span v-else>添加</span>
+              </button>
                 </div>
               </div>
               
@@ -1310,8 +1310,8 @@ const handleUserFormSubmit = async () => {
       showToast('请输入邮箱', 'error')
       return
     }
-    
-    // 验证密码
+  
+  // 验证密码
     if (!userForm.value.password) {
       showToast('请输入密码', 'error')
       return
@@ -1325,8 +1325,8 @@ const handleUserFormSubmit = async () => {
     
     // 验证两次密码是否一致
     if (userForm.value.password !== userForm.value.password2) {
-      passwordError.value = '两次输入的密码不一致'
-      return
+    passwordError.value = '两次输入的密码不一致'
+    return
     }
   }
   

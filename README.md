@@ -88,6 +88,44 @@ npm run dev
 
 欢迎提交Issue或Pull Request来完善项目。
 
+## 安全配置
+
+在将项目部署到生产环境或上传到公共仓库前，请确保以下安全措施：
+
+### 环境变量
+
+创建一个`.env`文件（不要提交到版本控制）包含以下配置：
+
+```
+# Django设置
+DEBUG=0
+DJANGO_SETTINGS_MODULE=server.settings
+SECRET_KEY=your_secret_key_here  # 生成新的密钥
+
+# 数据库路径
+DB_PATH=/app/data
+
+# 时区设置
+TZ=Asia/Shanghai
+
+# AI服务设置 
+AI_API_KEY=your_api_key_here  # 你的AI API密钥
+```
+
+### 敏感数据
+
+- 所有数据库文件 (`*.sqlite3`) 已被 .gitignore 排除
+- 确保不要提交 `/data` 目录中的实际数据
+- Docker部署时使用命名卷而非绑定挂载，防止数据泄露
+
+### Docker安全
+
+使用命名卷存储数据:
+```yaml
+volumes:
+  - lsnote_data:/app/data/  # 使用命名卷，不要使用本地目录挂载
+```
+
 ## 许可证
 
 [MIT License](LICENSE) 

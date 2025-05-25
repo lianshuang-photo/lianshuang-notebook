@@ -153,9 +153,9 @@
             <!-- AI API设置 (当AI功能启用时显示) -->
             <div v-if="preferences.enableAI" class="mt-4 space-y-4 border-t border-apple-gray-border dark:border-gray-700 pt-4">
               <div class="flex items-center justify-between">
-                <h3 class="text-md font-medium text-apple-gray-text-primary dark:text-white">
-                  API设置
-                </h3>
+              <h3 class="text-md font-medium text-apple-gray-text-primary dark:text-white">
+                API设置
+              </h3>
                 
                 <!-- API状态指示器 -->
                 <div class="flex items-center text-sm">
@@ -172,14 +172,14 @@
                   DeepSeek API密钥
                 </label>
                 <div class="relative">
-                  <input 
+                <input 
                     :type="showApiKey ? 'text' : 'password'"
-                    id="api-key"
-                    v-model="preferences.apiKey"
-                    @input="handleApiKeyInput"
+                  id="api-key"
+                  v-model="preferences.apiKey"
+                  @input="handleApiKeyInput"
                     class="form-input pr-20 w-full rounded-lg border-apple-gray-border dark:border-gray-700 bg-white dark:bg-gray-800 text-apple-gray-text-primary dark:text-white focus:border-apple-blue dark:focus:border-blue-500 focus:ring-1 focus:ring-apple-blue dark:focus:ring-blue-500 transition-colors"
-                    placeholder="输入您的DeepSeek API密钥"
-                  />
+                  placeholder="输入您的DeepSeek API密钥"
+                />
                   <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                     <button 
                       type="button" 
@@ -218,13 +218,13 @@
                   API基础URL
                 </label>
                 <div class="relative">
-                  <input 
-                    type="text"
-                    id="base-url"
-                    v-model="preferences.baseUrl"
+                <input 
+                  type="text"
+                  id="base-url"
+                  v-model="preferences.baseUrl"
                     class="form-input pr-10 w-full rounded-lg border-apple-gray-border dark:border-gray-700 bg-white dark:bg-gray-800 text-apple-gray-text-primary dark:text-white focus:border-apple-blue dark:focus:border-blue-500 focus:ring-1 focus:ring-apple-blue dark:focus:ring-blue-500 transition-colors"
-                    placeholder="https://api.deepseek.com"
-                  />
+                  placeholder="https://api.deepseek.com"
+                />
                   <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                     <span class="text-apple-gray-400 dark:text-gray-500">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -238,8 +238,8 @@
               <div class="form-group">
                 <div class="flex items-center justify-between mb-1">
                   <label for="model-name" class="block text-sm font-medium text-apple-gray-text-primary dark:text-white">
-                    模型名称
-                  </label>
+                  模型名称
+                </label>
                   
                   <!-- 模型状态指示器 -->
                   <div class="flex items-center text-sm" v-if="preferences.modelName">
@@ -554,42 +554,42 @@ const fetchModels = async () => {
 const handleApiKeyInput = () => {
   // 如果用户更改了密钥，就认为这是一个新密钥，而不是占位符
   if (preferences.apiKey && preferences.apiKey !== '********') {
-    // 清除上一个计时器
-    if (window.apiKeyTimer) clearTimeout(window.apiKeyTimer)
-    
-    // 如果API密钥为空或太短，则不发送请求
+  // 清除上一个计时器
+  if (window.apiKeyTimer) clearTimeout(window.apiKeyTimer)
+  
+  // 如果API密钥为空或太短，则不发送请求
     if (preferences.apiKey.length < 10) {
-      return
-    }
-    
-    // 防抖：只有当用户停止输入500毫秒后才发送请求
-    window.apiKeyTimer = setTimeout(async () => {
-      try {
-        // 先保存API密钥到服务器
-        await preferenceStore.updatePreference({
+    return
+  }
+  
+  // 防抖：只有当用户停止输入500毫秒后才发送请求
+  window.apiKeyTimer = setTimeout(async () => {
+    try {
+      // 先保存API密钥到服务器
+      await preferenceStore.updatePreference({
           ai_api_key: preferences.apiKey,
           ai_base_url: preferences.baseUrl
-        })
-        
-        // 保存成功后再获取模型列表
-        await fetchModels()
-      } catch (error) {
-        console.error('API密钥保存失败:', error)
-        
-        // 提取具体的错误信息
-        let errorMsg = 'API密钥保存失败'
-        if (error.response?.data?.ai_api_key) {
-          errorMsg = `API密钥错误: ${error.response.data.ai_api_key}`
-        } else if (error.response?.data?.error) {
-          errorMsg = error.response.data.error
-        } else if (error.response?.data?.message) {
-          errorMsg = error.response.data.message
-        }
-        
-        showToast(errorMsg, 'error')
+      })
+      
+      // 保存成功后再获取模型列表
+      await fetchModels()
+    } catch (error) {
+      console.error('API密钥保存失败:', error)
+      
+      // 提取具体的错误信息
+      let errorMsg = 'API密钥保存失败'
+      if (error.response?.data?.ai_api_key) {
+        errorMsg = `API密钥错误: ${error.response.data.ai_api_key}`
+      } else if (error.response?.data?.error) {
+        errorMsg = error.response.data.error
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message
       }
-    }, 500)
-  }
+      
+      showToast(errorMsg, 'error')
+    }
+  }, 500)
+}
 }
 
 // 测试连接

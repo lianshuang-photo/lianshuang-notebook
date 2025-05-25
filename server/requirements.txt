@@ -5,4 +5,5 @@ drf-yasg
 djangorestframework-simplejwt
 social-auth-app-django
 openai
-requests 
+requests
+gunicorn 

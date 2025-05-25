@@ -162,8 +162,8 @@ export const removeUserFromGroup = (groupId, userId) => {
   return api.delete(`/notes/groups/${groupId}/remove_user/`, {
     data: { user_id: userId }
   })
-}
-
+} 
+ 
 /**
  * 获取最近访问的分组
  * @returns {Promise} 返回最近访问的分组列表

@@ -250,9 +250,9 @@ def get_available_models(user_preferences=None):
         # 使用OpenAI客户端进行API调用
         client = OpenAI(api_key=ai_api_key, base_url=ai_base_url)
         
-        # 获取模型列表
+            # 获取模型列表
         response = client.models.list()
-        
+            
         # 提取模型信息
         models = []
         for model in response.data:
@@ -261,12 +261,12 @@ def get_available_models(user_preferences=None):
                 'owned_by': model.owned_by,
                 'created': model.created
             })
-        
-        return {
-            'status': 'success',
-            'message': '获取模型列表成功',
-            'models': models
-        }
+            
+            return {
+                'status': 'success',
+                'message': '获取模型列表成功',
+                'models': models
+            }
     except Exception as e:
         logger.error(f"获取模型列表失败: {str(e)}")
         return {
@@ -300,7 +300,7 @@ def test_api_connection(user_preferences=None):
     
     # 如果没有API密钥，返回错误
     if not ai_api_key:
-        return {
+            return {
             'status': 'error',
             'message': '未设置AI API密钥，请在设置中配置'
         }

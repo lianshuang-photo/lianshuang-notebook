@@ -127,7 +127,7 @@ class UserPreference(models.Model):
         verbose_name_plural = _('用户偏好')
     
     def __str__(self):
-        return f"{self.user.username}的偏好设置"
+        return f"{self.user.username}的偏好设置" 
 
 class GroupHistory(models.Model):
     """分组历史记录模型"""

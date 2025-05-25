@@ -222,9 +222,9 @@ class UserListView(generics.ListCreateAPIView):
                 last_name=last_name
             )
             
-                        # 确保用户是激活状态
+            # 确保用户是激活状态
             user.is_active = True
-            
+        
             # 设置管理员权限
             if request.data.get('is_staff'):
                 user.is_staff = True
@@ -238,7 +238,7 @@ class UserListView(generics.ListCreateAPIView):
                 logger.info(f"用户 {username} 密码验证成功")
             else:
                 logger.warning(f"用户 {username} 密码验证失败，请检查密码设置")
-            
+        
             return Response(
                 UserAdminSerializer(user).data,
                 status=status.HTTP_201_CREATED
@@ -258,15 +258,8 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
         user = self.get_object()
         if user.is_superuser and not request.user.is_superuser:
             return Response(
-                {"detail": "只有超级用户才能修改其他超级用户"},
+                {"detail": "无法修改超级用户的信息"},
                 status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # 禁止取消自己的管理员身份
-        if user.id == request.user.id and not request.data.get('is_staff', True):
-            return Response(
-                {"detail": "不能取消自己的管理员身份"},
-                status=status.HTTP_400_BAD_REQUEST
             )
         
         return super().update(request, *args, **kwargs)
@@ -282,17 +275,15 @@ class UserStatusUpdateView(generics.UpdateAPIView):
         user = self.get_object()
         if user.is_superuser and not request.user.is_superuser:
             return Response(
-                {"detail": "不能修改超级用户的状态"},
+                {"detail": "无法更改超级用户的状态"},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # 禁止停用自己
-        if user.id == request.user.id:
+        # 不允许停用自己
+        if user.id == request.user.id and not request.data.get('is_active', True):
             return Response(
-                {"detail": "不能修改自己的状态"},
+                {"detail": "无法停用你自己的账号"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        return super().update(request, *args, **kwargs)
- 
- 
+        return super().update(request, *args, **kwargs) 
