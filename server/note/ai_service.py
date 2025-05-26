@@ -109,7 +109,6 @@ def get_ai_response(messages, system_prompt=None, user_preferences=None):
                 'message': f'DeepSeek API调用失败: {str(api_error)}',
                 'content': ''
             }
-    
     except Exception as e:
         logger.error(f"AI服务错误: {str(e)}")
         return {
@@ -250,21 +249,61 @@ def get_available_models(user_preferences=None):
         # 使用OpenAI客户端进行API调用
         client = OpenAI(api_key=ai_api_key, base_url=ai_base_url)
         
+        try:
             # 获取模型列表
-        response = client.models.list()
+            response = client.models.list()
             
-        # 提取模型信息
-        models = []
-        for model in response.data:
-            models.append({
-                'id': model.id,
-                'owned_by': model.owned_by,
-                'created': model.created
-            })
+            # 提取模型信息
+            models = []
+            for model in response.data:
+                models.append({
+                    'id': model.id,
+                    'owned_by': model.owned_by,
+                    'created': getattr(model, 'created', None)
+                })
+            
+            # 如果API没有返回任何模型，手动添加已知的DeepSeek模型
+            if not models:
+                logger.info("API未返回模型列表，添加默认DeepSeek模型")
+                models = [
+                    {
+                        'id': 'deepseek-chat',
+                        'owned_by': 'deepseek',
+                        'created': None
+                    },
+                    {
+                        'id': 'deepseek-reasoner',
+                        'owned_by': 'deepseek',
+                        'created': None
+                    }
+                ]
             
             return {
                 'status': 'success',
                 'message': '获取模型列表成功',
+                'models': models
+            }
+        except Exception as api_error:
+            logger.error(f"获取模型列表API调用失败: {str(api_error)}")
+            
+            # API调用失败时，返回默认模型列表
+            logger.info("API调用失败，返回默认DeepSeek模型")
+            models = [
+                {
+                    'id': 'deepseek-chat',
+                    'owned_by': 'deepseek',
+                    'created': None
+                },
+                {
+                    'id': 'deepseek-reasoner',
+                    'owned_by': 'deepseek',
+                    'created': None
+                }
+            ]
+            
+            return {
+                'status': 'success',
+                'message': '使用默认模型列表',
                 'models': models
             }
     except Exception as e:

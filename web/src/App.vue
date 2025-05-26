@@ -3,7 +3,9 @@
     <AppHeader v-if="isAuthenticated" />
     
     <main class="flex-1">
-      <router-view />
+      <router-view v-slot="{ Component, route }">
+        <component :is="Component" :key="route.path" />
+      </router-view>
     </main>
     
     <AppFooter />
@@ -19,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { useUserPreferenceStore } from '@/store/userPreference'
@@ -35,6 +37,12 @@ const route = useRoute()
 const { toastVisible, toastMessage, toastType, closeToast } = useToast()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+
+// 页面过渡动画相关 - 现在通过CSS类和路由钩子处理
+router.afterEach((to, from) => {
+  // 重置滚动位置
+  window.scrollTo(0, 0)
+})
 
 // 监听路由变化，检查身份验证状态
 watch(
@@ -94,6 +102,89 @@ onMounted(async () => {
     router.push('/login')
   }
 })
-</script> 
+</script>
+
+<style>
+/* 页面过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.scale-enter-active,
+.scale-leave-active {
+  transition: all 0.3s ease;
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* 动画辅助类 */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.animate-scaleUp {
+  animation: scaleUp 0.2s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+</style>
  
 

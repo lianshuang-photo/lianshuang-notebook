@@ -253,5 +253,67 @@ export const addUsersToGroup = (groupId, users) => {
   })
   
   return Promise.all(promises)
+}
+
+/**
+ * 导出单个笔记
+ * @param {string} id 笔记ID
+ * @param {string} format 导出格式 (json, md, txt)
+ * @returns {Promise} 返回导出结果
+ */
+export const exportNote = (id, format = 'json') => {
+  return api.get(`/notes/notes/${id}/export/`, { 
+    params: { format },
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 批量导出笔记
+ * @param {Object} params 导出参数
+ * @param {string} params.ids 笔记ID列表，逗号分隔
+ * @param {string} params.group_id 分组ID (可选，与ids二选一)
+ * @param {string} params.format 导出格式 (json, csv, zip)
+ * @returns {Promise} 返回导出结果
+ */
+export const exportNotesBulk = (params) => {
+  return api.get('/notes/notes/export-bulk/', { 
+    params,
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 导入笔记
+ * @param {Object} importData 导入数据
+ * @param {File} importData.file 要导入的文件 (可选)
+ * @param {Object|Array|string} importData.data 要导入的数据 (可选，与file二选一)
+ * @param {string} importData.group_id 目标分组ID
+ * @param {string} importData.title 笔记标题 (可选，仅当data为字符串时使用)
+ * @returns {Promise} 返回导入结果
+ */
+export const importNote = (importData) => {
+  const formData = new FormData()
+  
+  if (importData.file) {
+    formData.append('file', importData.file)
+  } else if (importData.data) {
+    if (typeof importData.data === 'string') {
+      formData.append('data', importData.data)
+      if (importData.title) {
+        formData.append('title', importData.title)
+      }
+    } else {
+      formData.append('data', JSON.stringify(importData.data))
+    }
+  }
+  
+  formData.append('group_id', importData.group_id)
+  
+  return api.post('/notes/notes/import/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 } 
  

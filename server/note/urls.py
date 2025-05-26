@@ -31,6 +31,10 @@ urlpatterns = [
     path('group-history/record_access/', GroupHistoryViewSet.as_view({'post': 'record_access'}), name='record-group-access-alias'),
     # 添加直接API函数路径 
     path('group-history/add-record/', record_group_history, name='add-group-history'),
+    # 导入导出笔记的路由
+    path('notes/<uuid:pk>/export/', NoteViewSet.as_view({'get': 'export'}), name='export-note'),
+    path('notes/export-bulk/', NoteViewSet.as_view({'get': 'export_bulk'}), name='export-notes-bulk'),
+    path('notes/import/', NoteViewSet.as_view({'post': 'import_note'}), name='import-note'),
     # AI相关的URL
     path('ai/summarize/', ai_summarize_note, name='ai-summarize'),
     path('ai/ask/', ai_ask_about_note, name='ai-ask'),

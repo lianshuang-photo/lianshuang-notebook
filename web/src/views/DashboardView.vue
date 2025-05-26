@@ -67,7 +67,7 @@
                 <span class="text-sm text-apple-gray-text-secondary dark:text-gray-400">
                   更新于 {{ formatDate(group.updated_at) }}
                 </span>
-                <router-link :to="`/notes?group=${group.id}`" class="text-apple-link text-sm hover:underline">
+                <router-link :to="`/groups/${group.id}`" class="text-apple-link text-sm hover:underline">
                   打开 →
                 </router-link>
               </div>
@@ -109,7 +109,7 @@
         </div>
           
         <div v-else>
-          <div v-for="note in recentNotes" :key="note.id" class="bg-apple-gray-background-light dark:bg-gray-700 rounded-2xl border border-apple-gray-border-secondary dark:border-gray-600 overflow-hidden mb-4 last:mb-0">
+          <div v-for="note in recentNotes.slice(0, 3)" :key="note.id" class="bg-apple-gray-background-light dark:bg-gray-700 rounded-2xl border border-apple-gray-border-secondary dark:border-gray-600 overflow-hidden mb-4 last:mb-0">
             <div class="p-6">
               <div class="flex justify-between items-start">
                 <div>

@@ -419,8 +419,8 @@ const insertMarkdown = (type) => {
       cursorPos = selectionStart + 2
       break
     case 'code':
-      markdown = "```\n" + (selectedText || '代码块') + "\n```"
-      cursorPos = selectionStart + 4
+      markdown = `\`${selectedText || '代码'}\``
+      cursorPos = selectionStart + 1
       break
     case 'ul':
       markdown = `- ${selectedText || '列表项'}`
@@ -440,46 +440,83 @@ const insertMarkdown = (type) => {
       break
     case 'hr':
       markdown = `\n---\n`
-      cursorPos = selectionStart + 5
+      cursorPos = selectionStart + 4
       break
     case 'table':
-      markdown = `| 标题1 | 标题2 | 标题3 |\n| --- | --- | --- |\n| 内容1 | 内容2 | 内容3 |\n| 内容4 | 内容5 | 内容6 |`
-      cursorPos = selectionStart + 2
+      markdown = `| 表头1 | 表头2 | 表头3 |\n|-------|-------|-------|\n| 内容1 | 内容2 | 内容3 |`
+      cursorPos = selectionStart
       break
   }
   
-  // 更新内容
-  noteData.value.content = 
-    noteData.value.content.substring(0, selectionStart) + 
-    markdown + 
-    noteData.value.content.substring(selectionEnd)
+  // 插入Markdown文本
+  const newContent = noteData.value.content.substring(0, selectionStart) + 
+                    markdown + 
+                    noteData.value.content.substring(selectionEnd)
+  
+  noteData.value.content = newContent
   
   // 设置光标位置
   nextTick(() => {
-    if (!markdownEditor.value) return
-    
-    editor.focus()
-    
-    if (selectedText) {
-      editor.setSelectionRange(selectionStart, selectionStart + markdown.length)
-    } else {
-      const newCursorPos = type === 'code' || type === 'hr' || type === 'table' ? 
-        selectionStart + markdown.length : 
-        cursorPos
-      editor.setSelectionRange(newCursorPos, newCursorPos + (selectedText.length || 
-        (type === 'bold' ? 6 : 
-         type === 'italic' ? 5 : 
-         type === 'h1' ? 5 :
-         type === 'h2' ? 6 :
-         type === 'h3' ? 7 :
-         type === 'link' ? 8 :
-         type === 'image' ? 10 :
-         type === 'code' ? 4 :
-         type === 'ul' ? 5 :
-         type === 'ol' ? 5 :
-         type === 'task' ? 3 :
-         type === 'blockquote' ? 7 : 0)))
+    if (markdownEditor.value) {
+      markdownEditor.value.focus()
+      
+      if (selectedText) {
+        // 如果有选中文本，保持选中
+        markdownEditor.value.setSelectionRange(selectionStart, selectionStart + markdown.length)
+      } else {
+        // 否则，将光标放在适当位置
+        const newPos = cursorPos + (selectedText ? selectedText.length : 0)
+        markdownEditor.value.setSelectionRange(newPos, newPos)
+      }
     }
   })
 }
-</script> 
+</script>
+
+<style scoped>
+.content-block {
+  @apply bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-apple-sm border border-apple-gray-border-secondary dark:border-gray-700;
+}
+
+.input {
+  @apply py-2 px-4 rounded-lg border-0 focus:ring-1 focus:ring-apple-blue/30 focus:outline-none;
+}
+
+.form-label {
+  @apply text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400;
+}
+
+.btn-primary {
+  @apply bg-apple-blue text-white rounded-full py-2 px-4 text-sm font-medium hover:opacity-90 active:scale-95 transition-all duration-200 ease-apple-ease shadow-apple-sm hover:shadow-apple-md;
+}
+
+.btn-secondary {
+  @apply bg-white dark:bg-gray-700 text-apple-gray-text-primary dark:text-white rounded-full py-2 px-4 text-sm font-medium border border-apple-gray-300 dark:border-gray-600 hover:bg-apple-gray-50 dark:hover:bg-gray-600 active:scale-95 transition-all duration-200 ease-apple-ease;
+}
+
+/* 添加页面过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-left-enter-from {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.slide-left-leave-to {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+</style> 

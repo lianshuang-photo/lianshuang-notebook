@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { 
   getNotes, getNote, createNote, updateNote, deleteNote, getRecentNotes,
   getNoteGroups, getNoteGroup, createNoteGroup, updateNoteGroup, deleteNoteGroup,
-  getNotesByGroup, searchNotes
+  getNotesByGroup, searchNotes, exportNote, exportNotesBulk, importNote
 } from '@/api/note'
 
 export const useNoteStore = defineStore('note', {
@@ -266,73 +266,138 @@ export const useNoteStore = defineStore('note', {
     },
     
     async searchNotesAction(query) {
-      if (!query.trim()) {
-        this.searchResults = []
-        return []
-      }
-      
       this.loading = true
       this.error = null
       
       try {
-        // searchNotes方法现在直接使用本地搜索，不会出现404错误
-        console.log('开始搜索笔记, 关键词:', query)
-        
-        try {
-          const response = await searchNotes(query)
-          const results = response.data.results || response.data
-          
-          // 将结果转换为数组
-          this.searchResults = Array.isArray(results) ? results : []
-          
-          console.log('笔记搜索完成, 找到:', this.searchResults.length, '条结果')
-          return this.searchResults
-        } catch (error) {
-          console.warn('API搜索失败，尝试其他方案:', error)
-          throw error // 让外层捕获并执行备用搜索
-        }
+        const response = await searchNotes(query)
+        this.searchResults = response.data
+        return this.searchResults
       } catch (error) {
-        console.error('搜索操作失败，使用备用方案:', error)
-        
-        // 备用方案: 使用内存中已有的笔记数据
-        if (this.notes.length > 0) {
-          console.log('使用已加载的笔记数据进行搜索')
-          
-          const queryLower = query.toLowerCase()
-          this.searchResults = this.notes.filter(note => 
-            note.title.toLowerCase().includes(queryLower) || 
-            (note.content && note.content.toLowerCase().includes(queryLower))
-          )
-          
-          console.log('备用方案搜索结果:', this.searchResults.length, '条记录')
-          return this.searchResults
-        } else {
-          console.log('尝试从localStorage加载笔记数据')
-          
-          try {
-            const cachedNotes = localStorage.getItem('cached_notes')
-            if (cachedNotes) {
-              const notes = JSON.parse(cachedNotes)
-              const queryLower = query.toLowerCase()
-              
-              this.searchResults = notes.filter(note => 
-                note.title.toLowerCase().includes(queryLower) || 
-                (note.content && note.content.toLowerCase().includes(queryLower))
-              )
-              
-              console.log('从缓存搜索结果:', this.searchResults.length, '条记录')
-              return this.searchResults
-            }
-          } catch (localError) {
-            console.error('本地缓存搜索失败:', localError)
-          }
-          
-          // 所有方案都失败，返回空数组
-          this.searchResults = []
-          return []
-        }
+        this.error = error.response?.data || { message: '搜索笔记失败' }
+        throw error
       } finally {
         this.loading = false
+      }
+    },
+    
+    // 导出单个笔记
+    async exportNoteAction(id, format = 'json') {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await exportNote(id, format)
+        
+        // 创建下载链接
+        const blob = new Blob([response.data], { 
+          type: this.getContentType(format)
+        })
+        const url = window.URL.createObjectURL(blob)
+        
+        // 获取笔记标题用于文件名
+        let fileName = 'note'
+        const note = this.getNoteById(id)
+        if (note) {
+          fileName = note.title.replace(/\s+/g, '_')
+        }
+        
+        // 触发下载
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `${fileName}.${format}`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        return true
+      } catch (error) {
+        this.error = error.response?.data || { message: '导出笔记失败' }
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+    
+    // 批量导出笔记
+    async exportNotesBulkAction(params) {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await exportNotesBulk(params)
+        
+        // 确定文件扩展名
+        const format = params.format || 'json'
+        
+        // 创建下载链接
+        const blob = new Blob([response.data], { 
+          type: this.getContentType(format)
+        })
+        const url = window.URL.createObjectURL(blob)
+        
+        // 生成文件名
+        const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+        const fileName = `notes_export_${date}.${format}`
+        
+        // 触发下载
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', fileName)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        return true
+      } catch (error) {
+        this.error = error.response?.data || { message: '批量导出笔记失败' }
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+    
+    // 导入笔记
+    async importNoteAction(importData) {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await importNote(importData)
+        
+        // 如果导入成功，刷新笔记列表
+        if (response.data.success) {
+          if (importData.group_id) {
+            await this.fetchNotesByGroup(importData.group_id)
+          } else {
+            await this.fetchNotes()
+          }
+        }
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data || { message: '导入笔记失败' }
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+    
+    // 获取内容类型
+    getContentType(format) {
+      switch (format.toLowerCase()) {
+        case 'json':
+          return 'application/json'
+        case 'md':
+          return 'text/markdown'
+        case 'txt':
+          return 'text/plain'
+        case 'csv':
+          return 'text/csv'
+        case 'zip':
+          return 'application/zip'
+        default:
+          return 'application/octet-stream'
       }
     }
   }

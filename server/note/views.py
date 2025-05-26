@@ -3,7 +3,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, HttpResponse
 from .models import NoteGroup, NoteGroupPermission, Note, AIConversation, AIMessage, UserPreference, User, GroupHistory, GroupPermissionTemplate
 from .serializers import (
     NoteGroupSerializer, NoteGroupPermissionSerializer, NoteSerializer,
@@ -14,6 +14,10 @@ from .permissions import IsOwnerOrReadOnly, HasGroupPermission
 from .ai_service import summarize_note, ask_about_note, get_ai_response, get_available_models, get_ai_stream_response, test_api_connection
 import logging
 from rest_framework import serializers
+import json
+import csv
+import io
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +155,349 @@ class NoteViewSet(viewsets.ModelViewSet):
         notes = self.get_queryset().filter(group=group)
         serializer = self.get_serializer(notes, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def export(self, request, pk=None):
+        """导出单个笔记"""
+        note = self.get_object()
+        
+        # 检查是否有导出权限
+        if note.owner != request.user and not note.group.notegrouppermission_set.filter(
+            user=request.user, permission__in=['read', 'write', 'admin']
+        ).exists():
+            return Response({'error': '您没有导出此笔记的权限'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # 准备导出数据
+        export_data = {
+            'title': note.title,
+            'content': note.content,
+            'created_at': note.created_at.isoformat(),
+            'updated_at': note.updated_at.isoformat(),
+            'group_name': note.group.name,
+            'is_public': note.is_public
+        }
+        
+        # 确定导出格式
+        export_format = request.query_params.get('format', 'json').lower()
+        
+        if export_format == 'json':
+            # JSON格式导出
+            response = HttpResponse(json.dumps(export_data, ensure_ascii=False, indent=2), content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename="{note.title.replace(" ", "_")}.json"'
+        elif export_format == 'md':
+            # Markdown格式导出
+            content = f"# {note.title}\n\n{note.content}"
+            response = HttpResponse(content, content_type='text/markdown')
+            response['Content-Disposition'] = f'attachment; filename="{note.title.replace(" ", "_")}.md"'
+        elif export_format == 'txt':
+            # 纯文本格式导出
+            content = f"{note.title}\n\n{note.content}"
+            response = HttpResponse(content, content_type='text/plain')
+            response['Content-Disposition'] = f'attachment; filename="{note.title.replace(" ", "_")}.txt"'
+        else:
+            return Response({'error': f'不支持的导出格式: {export_format}'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        logger.info(f"用户 {request.user.username} 导出了笔记: {note.title}")
+        return response
+    
+    @action(detail=False, methods=['get'])
+    def export_bulk(self, request):
+        """批量导出笔记"""
+        # 获取要导出的笔记ID列表
+        note_ids = request.query_params.get('ids')
+        group_id = request.query_params.get('group_id')
+        
+        if not note_ids and not group_id:
+            return Response({'error': '请提供笔记ID列表或分组ID'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 确定导出格式
+        export_format = request.query_params.get('format', 'json').lower()
+        
+        # 获取笔记列表
+        if note_ids:
+            note_id_list = note_ids.split(',')
+            notes = self.get_queryset().filter(id__in=note_id_list)
+        else:
+            # 按分组导出
+            group = get_object_or_404(NoteGroup, id=group_id)
+            # 检查用户是否有权限访问此分组
+            if group.owner != request.user and not group.notegrouppermission_set.filter(user=request.user).exists():
+                return Response({'error': '您没有访问此分组的权限'}, status=status.HTTP_403_FORBIDDEN)
+            notes = self.get_queryset().filter(group=group)
+        
+        if not notes:
+            return Response({'error': '没有找到符合条件的笔记'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if export_format == 'json':
+            # JSON格式批量导出
+            export_data = []
+            for note in notes:
+                note_data = {
+                    'id': str(note.id),
+                    'title': note.title,
+                    'content': note.content,
+                    'created_at': note.created_at.isoformat(),
+                    'updated_at': note.updated_at.isoformat(),
+                    'group_name': note.group.name,
+                    'is_public': note.is_public
+                }
+                export_data.append(note_data)
+            
+            response = HttpResponse(json.dumps(export_data, ensure_ascii=False, indent=2), content_type='application/json')
+            filename = f"notes_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        elif export_format == 'csv':
+            # CSV格式批量导出
+            response = HttpResponse(content_type='text/csv')
+            filename = f"notes_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            writer = csv.writer(response)
+            writer.writerow(['ID', '标题', '内容', '创建时间', '更新时间', '所属分组', '是否公开'])
+            
+            for note in notes:
+                writer.writerow([
+                    str(note.id),
+                    note.title,
+                    note.content,
+                    note.created_at.isoformat(),
+                    note.updated_at.isoformat(),
+                    note.group.name,
+                    'Yes' if note.is_public else 'No'
+                ])
+        elif export_format == 'zip':
+            # 创建一个内存中的ZIP文件
+            import zipfile
+            from io import BytesIO
+            
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+                for note in notes:
+                    # 为每个笔记创建一个Markdown文件
+                    content = f"# {note.title}\n\n{note.content}"
+                    filename = f"{note.title.replace(' ', '_')}.md"
+                    zip_file.writestr(filename, content)
+            
+            # 设置响应
+            response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+            filename = f"notes_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        else:
+            return Response({'error': f'不支持的导出格式: {export_format}'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        logger.info(f"用户 {request.user.username} 批量导出了 {notes.count()} 个笔记")
+        return response
+    
+    @action(detail=False, methods=['post'])
+    def import_note(self, request):
+        """导入笔记"""
+        # 检查是否提供了导入数据
+        if 'file' not in request.FILES and 'data' not in request.data:
+            return Response({'error': '请提供导入文件或数据'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 获取目标分组ID
+        group_id = request.data.get('group_id')
+        if not group_id:
+            return Response({'error': '请提供目标分组ID'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 检查分组是否存在及权限
+        try:
+            group = NoteGroup.objects.get(id=group_id)
+            # 检查用户是否有权限在此分组创建笔记
+            if group.owner != request.user and not group.notegrouppermission_set.filter(
+                user=request.user, permission__in=['write', 'admin']
+            ).exists():
+                return Response({'error': '您没有在此分组创建笔记的权限'}, status=status.HTTP_403_FORBIDDEN)
+        except NoteGroup.DoesNotExist:
+            return Response({'error': '目标分组不存在'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # 处理导入
+        imported_notes = []
+        errors = []
+        
+        if 'file' in request.FILES:
+            file_obj = request.FILES['file']
+            file_extension = file_obj.name.split('.')[-1].lower()
+            
+            if file_extension == 'json':
+                # 处理JSON文件导入
+                try:
+                    import_data = json.loads(file_obj.read().decode('utf-8'))
+                    
+                    # 判断是单个笔记还是笔记列表
+                    if isinstance(import_data, dict):
+                        # 单个笔记
+                        note_data = {
+                            'title': import_data.get('title', '导入的笔记'),
+                            'content': import_data.get('content', ''),
+                            'group_id': group_id,
+                            'is_public': import_data.get('is_public', False)
+                        }
+                        serializer = self.get_serializer(data=note_data)
+                        if serializer.is_valid():
+                            note = serializer.save(owner=request.user)
+                            imported_notes.append(note.id)
+                        else:
+                            errors.append(serializer.errors)
+                    elif isinstance(import_data, list):
+                        # 笔记列表
+                        for item in import_data:
+                            note_data = {
+                                'title': item.get('title', '导入的笔记'),
+                                'content': item.get('content', ''),
+                                'group_id': group_id,
+                                'is_public': item.get('is_public', False)
+                            }
+                            serializer = self.get_serializer(data=note_data)
+                            if serializer.is_valid():
+                                note = serializer.save(owner=request.user)
+                                imported_notes.append(note.id)
+                            else:
+                                errors.append(serializer.errors)
+                    else:
+                        errors.append('无效的JSON格式')
+                except json.JSONDecodeError:
+                    errors.append('JSON解析错误')
+            elif file_extension == 'md':
+                # 处理Markdown文件导入
+                content = file_obj.read().decode('utf-8')
+                lines = content.split('\n')
+                
+                # 尝试提取标题
+                title = '导入的Markdown笔记'
+                if lines and lines[0].startswith('# '):
+                    title = lines[0][2:].strip()
+                    content = '\n'.join(lines[1:]).strip()
+                
+                note_data = {
+                    'title': title,
+                    'content': content,
+                    'group_id': group_id,
+                    'is_public': False
+                }
+                
+                serializer = self.get_serializer(data=note_data)
+                if serializer.is_valid():
+                    note = serializer.save(owner=request.user)
+                    imported_notes.append(note.id)
+                else:
+                    errors.append(serializer.errors)
+            elif file_extension == 'txt':
+                # 处理纯文本文件导入
+                content = file_obj.read().decode('utf-8')
+                lines = content.split('\n')
+                
+                # 尝试提取标题
+                title = file_obj.name.split('.')[0] or '导入的文本笔记'
+                
+                note_data = {
+                    'title': title,
+                    'content': content,
+                    'group_id': group_id,
+                    'is_public': False
+                }
+                
+                serializer = self.get_serializer(data=note_data)
+                if serializer.is_valid():
+                    note = serializer.save(owner=request.user)
+                    imported_notes.append(note.id)
+                else:
+                    errors.append(serializer.errors)
+            elif file_extension == 'csv':
+                # 处理CSV文件导入
+                try:
+                    csv_data = csv.reader(io.StringIO(file_obj.read().decode('utf-8')))
+                    header = next(csv_data, None)  # 获取CSV头部
+                    
+                    for row in csv_data:
+                        if len(row) >= 2:  # 至少需要标题和内容
+                            note_data = {
+                                'title': row[0] or '导入的笔记',
+                                'content': row[1] or '',
+                                'group_id': group_id,
+                                'is_public': False
+                            }
+                            
+                            serializer = self.get_serializer(data=note_data)
+                            if serializer.is_valid():
+                                note = serializer.save(owner=request.user)
+                                imported_notes.append(note.id)
+                            else:
+                                errors.append(serializer.errors)
+                except Exception as e:
+                    errors.append(f'CSV解析错误: {str(e)}')
+            else:
+                errors.append(f'不支持的文件格式: {file_extension}')
+        elif 'data' in request.data:
+            # 直接从请求数据导入
+            try:
+                import_data = request.data['data']
+                if isinstance(import_data, str):
+                    # 尝试解析JSON字符串
+                    try:
+                        import_data = json.loads(import_data)
+                    except json.JSONDecodeError:
+                        # 如果不是JSON，则作为普通文本处理
+                        note_data = {
+                            'title': request.data.get('title', '导入的笔记'),
+                            'content': import_data,
+                            'group_id': group_id,
+                            'is_public': request.data.get('is_public', False)
+                        }
+                        serializer = self.get_serializer(data=note_data)
+                        if serializer.is_valid():
+                            note = serializer.save(owner=request.user)
+                            imported_notes.append(note.id)
+                        else:
+                            errors.append(serializer.errors)
+                        import_data = None  # 防止后续处理
+                
+                # 处理JSON数据
+                if import_data:
+                    if isinstance(import_data, dict):
+                        # 单个笔记
+                        note_data = {
+                            'title': import_data.get('title', '导入的笔记'),
+                            'content': import_data.get('content', ''),
+                            'group_id': group_id,
+                            'is_public': import_data.get('is_public', False)
+                        }
+                        serializer = self.get_serializer(data=note_data)
+                        if serializer.is_valid():
+                            note = serializer.save(owner=request.user)
+                            imported_notes.append(note.id)
+                        else:
+                            errors.append(serializer.errors)
+                    elif isinstance(import_data, list):
+                        # 笔记列表
+                        for item in import_data:
+                            note_data = {
+                                'title': item.get('title', '导入的笔记'),
+                                'content': item.get('content', ''),
+                                'group_id': group_id,
+                                'is_public': item.get('is_public', False)
+                            }
+                            serializer = self.get_serializer(data=note_data)
+                            if serializer.is_valid():
+                                note = serializer.save(owner=request.user)
+                                imported_notes.append(note.id)
+                            else:
+                                errors.append(serializer.errors)
+            except Exception as e:
+                errors.append(f'数据处理错误: {str(e)}')
+        
+        # 返回导入结果
+        result = {
+            'success': len(imported_notes) > 0,
+            'imported_count': len(imported_notes),
+            'imported_notes': imported_notes,
+        }
+        
+        if errors:
+            result['errors'] = errors
+        
+        logger.info(f"用户 {request.user.username} 导入了 {len(imported_notes)} 个笔记到分组 {group.name}")
+        return Response(result)
 
 class AIConversationViewSet(viewsets.ModelViewSet):
     """AI对话视图集"""

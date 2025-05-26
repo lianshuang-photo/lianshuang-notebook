@@ -59,511 +59,514 @@
           </div>
         </div>
         
-        <!-- 用户管理 -->
-        <div v-if="activeTab === 'users'" class="content-block p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-medium text-apple-gray-text-primary dark:text-white">用户列表</h2>
-            <button @click="showAddUserDialog = true" class="btn-primary flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-              </svg>
-              添加用户
-            </button>
-          </div>
-          
-          <!-- 用户列表表格 -->
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-apple-gray-border-secondary dark:divide-gray-700">
-              <thead>
-                <tr>
-                  <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">用户名</th>
-                  <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">邮箱</th>
-                  <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">角色</th>
-                  <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">状态</th>
-                  <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">操作</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-apple-gray-border-secondary dark:divide-gray-700">
-                <tr v-if="loading" class="text-center">
-                  <td colspan="5" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">加载中...</td>
-                </tr>
-                
-                <tr v-else-if="users.length === 0" class="text-center">
-                  <td colspan="5" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">暂无用户</td>
-                </tr>
-                
-                <tr v-for="user in users" :key="user.id" class="hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50">
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="w-8 h-8 rounded-full bg-apple-gray-200 dark:bg-gray-700 flex items-center justify-center text-apple-gray-text-primary dark:text-white font-medium text-sm">
-                        {{ getUserInitials(user) }}
-                      </div>
-                      <div class="ml-3">
-                        <div class="text-sm font-medium text-apple-gray-text-primary dark:text-white">{{ user.username }}</div>
-                        <div class="text-xs text-apple-gray-text-secondary dark:text-gray-400">{{ user.first_name }} {{ user.last_name }}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-text-secondary dark:text-gray-400">
-                    {{ user.email }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span v-if="user.is_superuser" class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200">超级管理员</span>
-                    <span v-else-if="user.is_staff" class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">管理员</span>
-                    <span v-else class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">用户</span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span v-if="user.is_active" class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">活跃</span>
-                    <span v-else class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">停用</span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-text-secondary dark:text-gray-400">
-                    <div class="flex space-x-2">
-                      <button 
-                        @click="editUser(user)" 
-                        class="text-apple-blue hover:text-apple-blue-dark transition-colors"
-                        :disabled="user.is_superuser && !authStore.isSuperuser"
-                      >
-                        编辑
-                      </button>
-                      <button 
-                        @click="toggleUserStatus(user)" 
-                        class="text-red-600 hover:text-red-700 transition-colors"
-                        :disabled="user.is_superuser || user.id === authStore.user?.id || user.updating"
-                      >
-                        <span v-if="user.updating">处理中...</span>
-                        <span v-else>{{ user.is_active ? '停用' : '启用' }}</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <!-- 添加/编辑用户对话框 -->
-          <div v-if="showAddUserDialog || showEditUserDialog" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg mx-4">
-              <div class="p-6 border-b border-apple-gray-border-secondary dark:border-gray-700">
-                <h3 class="text-lg font-medium text-apple-gray-text-primary dark:text-white">
-                  {{ showEditUserDialog ? '编辑用户' : '添加用户' }}
-                </h3>
-              </div>
-              
-              <div class="p-6">
-                <form @submit.prevent="handleUserFormSubmit">
-                  <div class="space-y-4">
-                    <div>
-                      <label for="username" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">用户名</label>
-                      <input 
-                        id="username" 
-                        v-model="userForm.username" 
-                        type="text" 
-                        class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
-                        :disabled="showEditUserDialog"
-                        required
-                      >
-                    </div>
-                    
-                    <div>
-                      <label for="email" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">邮箱</label>
-                      <input 
-                        id="email" 
-                        v-model="userForm.email" 
-                        type="email" 
-                        class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
-                        required
-                      >
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                      <div>
-                        <label for="first_name" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">名</label>
-                        <input 
-                          id="first_name" 
-                          v-model="userForm.first_name" 
-                          type="text" 
-                          class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
-                        >
-                      </div>
-                      
-                      <div>
-                        <label for="last_name" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">姓</label>
-                        <input 
-                          id="last_name" 
-                          v-model="userForm.last_name" 
-                          type="text" 
-                          class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
-                        >
-                      </div>
-                    </div>
-                    
-                    <div v-if="!showEditUserDialog">
-                      <label for="password" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">密码</label>
-                      <input 
-                        id="password" 
-                        v-model="userForm.password" 
-                        type="password" 
-                        class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
-                        required
-                      >
-                    </div>
-                    
-                    <div v-if="!showEditUserDialog">
-                      <label for="password2" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">确认密码</label>
-                      <input 
-                        id="password2" 
-                        v-model="userForm.password2" 
-                        type="password" 
-                        class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
-                        required
-                      >
-                    </div>
-                    
-                    <div v-if="passwordError" class="text-red-600 text-sm">
-                      {{ passwordError }}
-                    </div>
-                    
-                    <div class="flex items-center">
-                      <input 
-                        id="is_staff" 
-                        v-model="userForm.is_staff" 
-                        type="checkbox" 
-                        class="h-4 w-4 rounded border-apple-gray-border-secondary dark:border-gray-700 text-apple-blue focus:ring-apple-blue dark:bg-gray-700"
-                      >
-                      <label for="is_staff" class="ml-2 block text-sm text-apple-gray-text-primary dark:text-white">管理员权限</label>
-                    </div>
-                  </div>
-                  
-                  <div class="mt-6 flex justify-end space-x-3">
-                    <button 
-                      type="button" 
-                      @click="closeUserDialog" 
-                      class="btn-secondary"
-                    >
-                      取消
-                    </button>
-                    
-                    <button 
-                      type="submit" 
-                      class="btn-primary"
-                      :disabled="formSubmitting"
-                    >
-                      <span v-if="formSubmitting">提交中...</span>
-                      <span v-else>{{ showEditUserDialog ? '保存' : '添加' }}</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 分组权限管理 -->
-        <div v-else-if="activeTab === 'groups'" class="content-block p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-medium text-apple-gray-text-primary dark:text-white">分组权限管理</h2>
-            <div class="flex space-x-2">
-              <select 
-                v-model="selectedGroup" 
-                class="input bg-apple-gray-background-light dark:bg-gray-700 pr-8"
-              >
-                <option value="">-- 选择分组 --</option>
-                <option v-for="group in groups" :key="group.id" :value="group.id">
-                  {{ group.name }}
-                </option>
-              </select>
-              
-              <button 
-                @click="loadGroupUsers" 
-                class="btn-primary"
-                :disabled="!selectedGroup || loadingGroupUsers"
-              >
-                <span v-if="loadingGroupUsers">加载中...</span>
-                <span v-else>查看</span>
+        <!-- 内容区域 -->
+        <div>
+          <!-- 用户管理 -->
+          <div v-if="activeTab === 'users'" class="content-block p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-medium text-apple-gray-text-primary dark:text-white">用户列表</h2>
+              <button @click="showAddUserDialog = true" class="btn-primary flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+                </svg>
+                添加用户
               </button>
             </div>
-          </div>
-          
-          <!-- 最近访问的分组 -->
-          <div v-if="!selectedGroup" class="mb-6">
-            <h3 class="text-lg font-medium text-apple-gray-text-primary dark:text-white mb-3">最近访问的分组</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div 
-                v-for="item in recentGroups" 
-                :key="item.id" 
-                class="p-4 border border-apple-gray-border-secondary dark:border-gray-700 rounded-lg hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50 cursor-pointer"
-                @click="selectRecentGroup(item.group.id)"
-              >
-                <div class="font-medium text-apple-gray-text-primary dark:text-white">{{ item.group.name }}</div>
-                <div class="text-sm text-apple-gray-text-secondary dark:text-gray-400">最后访问: {{ formatDate(item.last_accessed) }}</div>
-                <div class="text-sm text-apple-gray-text-secondary dark:text-gray-400 mt-1">{{ item.group.note_count || 0 }}个笔记</div>
-              </div>
-              
-              <div v-if="recentGroups.length === 0" class="col-span-full text-center p-4 text-apple-gray-text-secondary dark:text-gray-400">
-                尚无访问记录
-              </div>
-            </div>
-          </div>
-          
-          <div v-if="!selectedGroup" class="text-center py-10 text-apple-gray-text-secondary dark:text-gray-400">
-            请选择一个分组查看权限设置
-          </div>
-          
-          <div v-else>
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-medium text-apple-gray-text-primary dark:text-white">
-              分组成员: {{ selectedGroupName }}
-            </h3>
-              
-              <div class="flex items-center space-x-2">
-                <!-- 创建权限模板按钮 -->
-                <button 
-                  @click="openPermissionTemplateDialog"
-                  class="btn-secondary text-sm"
-                >
-                  保存为模板
-                </button>
-                
-                <!-- 应用模板按钮 -->
-                <div class="relative" ref="templateDropdownRef">
-                  <button 
-                    @click="toggleTemplateDropdown"
-                    class="btn-secondary text-sm"
-                  >
-                    应用模板
-                  </button>
-                  
-                  <!-- 模板下拉菜单 -->
-                  <div 
-                    v-if="showTemplateDropdown" 
-                    class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10"
-                  >
-                    <div class="py-1" role="menu" aria-orientation="vertical">
-                      <div v-if="loadingTemplates" class="px-4 py-2 text-sm text-apple-gray-text-secondary dark:text-gray-400">
-                        加载中...
-                      </div>
-                      
-                      <div v-else-if="permissionTemplates.length === 0" class="px-4 py-2 text-sm text-apple-gray-text-secondary dark:text-gray-400">
-                        暂无模板
-                      </div>
-                      
-                      <button
-                        v-for="template in permissionTemplates"
-                        :key="template.id"
-                        @click="applyTemplate(template.id)"
-                        class="block w-full text-left px-4 py-2 text-sm text-apple-gray-text-primary dark:text-white hover:bg-apple-gray-background-light dark:hover:bg-gray-700"
-                        role="menuitem"
-                      >
-                        {{ template.name }} ({{ getPermissionText(template.permission) }})
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
             
-            <!-- 搜索和筛选区域 -->
-            <div class="mb-4 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <div class="flex-1">
-                <input 
-                  v-model="userSearchQuery" 
-                  type="text" 
-                  placeholder="搜索用户..." 
-                  class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
-                  @input="filterGroupUsers"
-                />
-              </div>
-              
-              <div class="flex items-center space-x-2">
-                <span class="text-sm text-apple-gray-text-secondary dark:text-gray-400">权限:</span>
-                <select 
-                  v-model="permissionFilter" 
-                  class="input bg-apple-gray-background-light dark:bg-gray-700 text-sm"
-                  @change="filterGroupUsers"
-                >
-                  <option value="all">全部</option>
-                  <option value="read">只读</option>
-                  <option value="write">读写</option>
-                  <option value="admin">管理</option>
-                </select>
-              </div>
-            </div>
-            
-            <!-- 添加成员表单 -->
-            <div class="mb-6 border border-apple-gray-border-secondary dark:border-gray-700 rounded-lg p-4">
-              <h4 class="text-md font-medium text-apple-gray-text-primary dark:text-white mb-3">添加成员</h4>
-              
-              <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <div class="flex-1">
-              <select 
-                v-model="userToAdd" 
-                    class="input bg-apple-gray-background-light dark:bg-gray-700 w-full"
-              >
-                <option value="">-- 选择用户 --</option>
-                <option v-for="user in usersNotInGroup" :key="user.id" :value="user.id">
-                  {{ user.username }} ({{ user.email }})
-                </option>
-              </select>
-                </div>
-              
-                <div class="w-32">
-              <select 
-                v-model="permissionToAdd" 
-                    class="input bg-apple-gray-background-light dark:bg-gray-700 w-full"
-              >
-                <option value="read">只读</option>
-                <option value="write">读写</option>
-                <option value="admin">管理</option>
-              </select>
-                </div>
-              
-                <div>
-              <button 
-                @click="handleAddUserToGroup" 
-                    class="btn-primary w-full sm:w-auto"
-                :disabled="!userToAdd || addingUser"
-              >
-                <span v-if="addingUser">添加中...</span>
-                <span v-else>添加</span>
-              </button>
-                </div>
-              </div>
-              
-              <!-- 批量添加模式切换 -->
-              <div class="mt-3 flex items-center">
-                <button 
-                  @click="batchMode = !batchMode" 
-                  class="text-sm text-apple-blue dark:text-blue-400 hover:underline"
-                >
-                  {{ batchMode ? '取消批量添加' : '批量添加用户' }}
-                </button>
-              </div>
-              
-              <!-- 批量添加面板 -->
-              <div v-if="batchMode" class="mt-3 border-t border-apple-gray-border-secondary dark:border-gray-700 pt-3">
-                <h5 class="text-sm font-medium text-apple-gray-text-primary dark:text-white mb-2">批量选择用户</h5>
-                
-                <div class="mb-3">
-                  <input 
-                    v-model="batchSearchQuery" 
-                    type="text" 
-                    placeholder="搜索用户..." 
-                    class="input w-full bg-apple-gray-background-light dark:bg-gray-700 text-sm"
-                  />
-                </div>
-                
-                <div class="max-h-64 overflow-y-auto border border-apple-gray-border-secondary dark:border-gray-700 rounded-lg p-2">
-                  <div 
-                    v-for="user in filteredBatchUsers" 
-                    :key="user.id"
-                    class="flex items-center py-1 px-2 hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50 rounded"
-                  >
-                    <input 
-                      type="checkbox" 
-                      :id="`batch-user-${user.id}`" 
-                      v-model="selectedBatchUsers" 
-                      :value="user.id"
-                      class="h-4 w-4 rounded border-apple-gray-border-secondary dark:border-gray-700 text-apple-blue focus:ring-apple-blue"
-                    />
-                    <label :for="`batch-user-${user.id}`" class="ml-2 text-sm text-apple-gray-text-primary dark:text-white cursor-pointer">
-                      {{ user.username }} ({{ user.email }})
-                    </label>
-                  </div>
-                  
-                  <div v-if="filteredBatchUsers.length === 0" class="py-2 text-center text-sm text-apple-gray-text-secondary dark:text-gray-400">
-                    没有匹配的用户
-                  </div>
-                </div>
-                
-                <div class="mt-3 flex justify-between items-center">
-                  <div class="text-sm text-apple-gray-text-secondary dark:text-gray-400">
-                    已选择 {{ selectedBatchUsers.length }} 个用户
-                  </div>
-                  
-                  <div class="flex items-center space-x-2">
-                    <select 
-                      v-model="batchPermission" 
-                      class="input bg-apple-gray-background-light dark:bg-gray-700 text-sm"
-                    >
-                      <option value="read">只读</option>
-                      <option value="write">读写</option>
-                      <option value="admin">管理</option>
-                    </select>
-                    
-                    <button 
-                      @click="handleBatchAddUsers" 
-                      class="btn-primary text-sm"
-                      :disabled="selectedBatchUsers.length === 0 || batchAdding"
-                    >
-                      <span v-if="batchAdding">添加中...</span>
-                      <span v-else>批量添加</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 分组成员列表 -->
+            <!-- 用户列表表格 -->
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-apple-gray-border-secondary dark:divide-gray-700">
                 <thead>
                   <tr>
-                    <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">用户</th>
+                    <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">用户名</th>
                     <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">邮箱</th>
-                    <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">权限</th>
+                    <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">角色</th>
+                    <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">状态</th>
                     <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-apple-gray-border-secondary dark:divide-gray-700">
-                  <tr v-if="loadingGroupUsers" class="text-center">
-                    <td colspan="4" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">加载中...</td>
+                  <tr v-if="loading" class="text-center">
+                    <td colspan="5" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">加载中...</td>
                   </tr>
                   
-                  <tr v-else-if="filteredGroupUsers.length === 0" class="text-center">
-                    <td colspan="4" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">
-                      {{ groupUsers.length === 0 ? '该分组暂无成员' : '没有匹配的成员' }}
-                    </td>
+                  <tr v-else-if="users.length === 0" class="text-center">
+                    <td colspan="5" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">暂无用户</td>
                   </tr>
                   
-                  <tr v-for="member in filteredGroupUsers" :key="`${member.user_id}_${selectedGroup}`" class="hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50">
+                  <tr v-for="user in users" :key="user.id" class="hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50">
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="flex items-center">
                         <div class="w-8 h-8 rounded-full bg-apple-gray-200 dark:bg-gray-700 flex items-center justify-center text-apple-gray-text-primary dark:text-white font-medium text-sm">
-                          {{ getUserInitials(member.user) }}
+                          {{ getUserInitials(user) }}
                         </div>
                         <div class="ml-3">
-                          <div class="text-sm font-medium text-apple-gray-text-primary dark:text-white">{{ member.user.username }}</div>
-                          <div class="text-xs text-apple-gray-text-secondary dark:text-gray-400">{{ member.user.first_name }} {{ member.user.last_name }}</div>
+                          <div class="text-sm font-medium text-apple-gray-text-primary dark:text-white">{{ user.username }}</div>
+                          <div class="text-xs text-apple-gray-text-secondary dark:text-gray-400">{{ user.first_name }} {{ user.last_name }}</div>
                         </div>
                       </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-text-secondary dark:text-gray-400">
-                      {{ member.user.email }}
+                      {{ user.email }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
+                      <span v-if="user.is_superuser" class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200">超级管理员</span>
+                      <span v-else-if="user.is_staff" class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">管理员</span>
+                      <span v-else class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">用户</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span v-if="user.is_active" class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">活跃</span>
+                      <span v-else class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">停用</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-text-secondary dark:text-gray-400">
+                      <div class="flex space-x-2">
+                        <button 
+                          @click="editUser(user)" 
+                          class="text-apple-blue hover:text-apple-blue-dark transition-colors"
+                          :disabled="user.is_superuser && !authStore.isSuperuser"
+                        >
+                          编辑
+                        </button>
+                        <button 
+                          @click="toggleUserStatus(user)" 
+                          class="text-red-600 hover:text-red-700 transition-colors"
+                          :disabled="user.is_superuser || user.id === authStore.user?.id || user.updating"
+                        >
+                          <span v-if="user.updating">处理中...</span>
+                          <span v-else>{{ user.is_active ? '停用' : '启用' }}</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- 添加/编辑用户对话框 -->
+            <div v-if="showAddUserDialog || showEditUserDialog" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+              <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg mx-4">
+                <div class="p-6 border-b border-apple-gray-border-secondary dark:border-gray-700">
+                  <h3 class="text-lg font-medium text-apple-gray-text-primary dark:text-white">
+                    {{ showEditUserDialog ? '编辑用户' : '添加用户' }}
+                  </h3>
+                </div>
+                
+                <div class="p-6">
+                  <form @submit.prevent="handleUserFormSubmit">
+                    <div class="space-y-4">
+                      <div>
+                        <label for="username" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">用户名</label>
+                        <input 
+                          id="username" 
+                          v-model="userForm.username" 
+                          type="text" 
+                          class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
+                          :disabled="showEditUserDialog"
+                          required
+                        >
+                      </div>
+                      
+                      <div>
+                        <label for="email" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">邮箱</label>
+                        <input 
+                          id="email" 
+                          v-model="userForm.email" 
+                          type="email" 
+                          class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
+                          required
+                        >
+                      </div>
+                      
+                      <div class="grid grid-cols-2 gap-4">
+                        <div>
+                          <label for="first_name" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">名</label>
+                          <input 
+                            id="first_name" 
+                            v-model="userForm.first_name" 
+                            type="text" 
+                            class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
+                          >
+                        </div>
+                        
+                        <div>
+                          <label for="last_name" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">姓</label>
+                          <input 
+                            id="last_name" 
+                            v-model="userForm.last_name" 
+                            type="text" 
+                            class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
+                          >
+                        </div>
+                      </div>
+                      
+                      <div v-if="!showEditUserDialog">
+                        <label for="password" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">密码</label>
+                        <input 
+                          id="password" 
+                          v-model="userForm.password" 
+                          type="password" 
+                          class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
+                          required
+                        >
+                      </div>
+                      
+                      <div v-if="!showEditUserDialog">
+                        <label for="password2" class="block text-sm font-medium text-apple-gray-text-secondary dark:text-gray-400 mb-1">确认密码</label>
+                        <input 
+                          id="password2" 
+                          v-model="userForm.password2" 
+                          type="password" 
+                          class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
+                          required
+                        >
+                      </div>
+                      
+                      <div v-if="passwordError" class="text-red-600 text-sm">
+                        {{ passwordError }}
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <input 
+                          id="is_staff" 
+                          v-model="userForm.is_staff" 
+                          type="checkbox" 
+                          class="h-4 w-4 rounded border-apple-gray-border-secondary dark:border-gray-700 text-apple-blue focus:ring-apple-blue dark:bg-gray-700"
+                        >
+                        <label for="is_staff" class="ml-2 block text-sm text-apple-gray-text-primary dark:text-white">管理员权限</label>
+                      </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                      <button 
+                        type="button" 
+                        @click="closeUserDialog" 
+                        class="btn-secondary"
+                      >
+                        取消
+                      </button>
+                      
+                      <button 
+                        type="submit" 
+                        class="btn-primary"
+                        :disabled="formSubmitting"
+                      >
+                        <span v-if="formSubmitting">提交中...</span>
+                        <span v-else>{{ showEditUserDialog ? '保存' : '添加' }}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 分组权限管理 -->
+          <div v-else-if="activeTab === 'groups'" class="content-block p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-medium text-apple-gray-text-primary dark:text-white">分组权限管理</h2>
+              <div class="flex space-x-2">
+                <select 
+                  v-model="selectedGroup" 
+                  class="input bg-apple-gray-background-light dark:bg-gray-700 pr-8"
+                >
+                  <option value="">-- 选择分组 --</option>
+                  <option v-for="group in groups" :key="group.id" :value="group.id">
+                    {{ group.name }}
+                  </option>
+                </select>
+                
+                <button 
+                  @click="loadGroupUsers" 
+                  class="btn-primary"
+                  :disabled="!selectedGroup || loadingGroupUsers"
+                >
+                  <span v-if="loadingGroupUsers">加载中...</span>
+                  <span v-else>查看</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- 最近访问的分组 -->
+            <div v-if="!selectedGroup" class="mb-6">
+              <h3 class="text-lg font-medium text-apple-gray-text-primary dark:text-white mb-3">最近访问的分组</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div 
+                  v-for="item in recentGroups" 
+                  :key="item.id" 
+                  class="p-4 border border-apple-gray-border-secondary dark:border-gray-700 rounded-lg hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50 cursor-pointer"
+                  @click="selectRecentGroup(item.group.id)"
+                >
+                  <div class="font-medium text-apple-gray-text-primary dark:text-white">{{ item.group.name }}</div>
+                  <div class="text-sm text-apple-gray-text-secondary dark:text-gray-400">最后访问: {{ formatDate(item.last_accessed) }}</div>
+                  <div class="text-sm text-apple-gray-text-secondary dark:text-gray-400 mt-1">{{ item.group.note_count || 0 }}个笔记</div>
+                </div>
+                
+                <div v-if="recentGroups.length === 0" class="col-span-full text-center p-4 text-apple-gray-text-secondary dark:text-gray-400">
+                  尚无访问记录
+                </div>
+              </div>
+            </div>
+            
+            <div v-if="!selectedGroup" class="text-center py-10 text-apple-gray-text-secondary dark:text-gray-400">
+              请选择一个分组查看权限设置
+            </div>
+            
+            <div v-else>
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-apple-gray-text-primary dark:text-white">
+                分组成员: {{ selectedGroupName }}
+              </h3>
+                
+                <div class="flex items-center space-x-2">
+                  <!-- 创建权限模板按钮 -->
+                  <button 
+                    @click="openPermissionTemplateDialog"
+                    class="btn-secondary text-sm"
+                  >
+                    保存为模板
+                  </button>
+                  
+                  <!-- 应用模板按钮 -->
+                  <div class="relative" ref="templateDropdownRef">
+                    <button 
+                      @click="toggleTemplateDropdown"
+                      class="btn-secondary text-sm"
+                    >
+                      应用模板
+                    </button>
+                    
+                    <!-- 模板下拉菜单 -->
+                    <div 
+                      v-if="showTemplateDropdown" 
+                      class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10"
+                    >
+                      <div class="py-1" role="menu" aria-orientation="vertical">
+                        <div v-if="loadingTemplates" class="px-4 py-2 text-sm text-apple-gray-text-secondary dark:text-gray-400">
+                          加载中...
+                        </div>
+                        
+                        <div v-else-if="permissionTemplates.length === 0" class="px-4 py-2 text-sm text-apple-gray-text-secondary dark:text-gray-400">
+                          暂无模板
+                        </div>
+                        
+                        <button
+                          v-for="template in permissionTemplates"
+                          :key="template.id"
+                          @click="applyTemplate(template.id)"
+                          class="block w-full text-left px-4 py-2 text-sm text-apple-gray-text-primary dark:text-white hover:bg-apple-gray-background-light dark:hover:bg-gray-700"
+                          role="menuitem"
+                        >
+                          {{ template.name }} ({{ getPermissionText(template.permission) }})
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 搜索和筛选区域 -->
+              <div class="mb-4 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <div class="flex-1">
+                  <input 
+                    v-model="userSearchQuery" 
+                    type="text" 
+                    placeholder="搜索用户..." 
+                    class="input w-full bg-apple-gray-background-light dark:bg-gray-700"
+                    @input="filterGroupUsers"
+                  />
+                </div>
+                
+                <div class="flex items-center space-x-2">
+                  <span class="text-sm text-apple-gray-text-secondary dark:text-gray-400">权限:</span>
+                  <select 
+                    v-model="permissionFilter" 
+                    class="input bg-apple-gray-background-light dark:bg-gray-700 text-sm"
+                    @change="filterGroupUsers"
+                  >
+                    <option value="all">全部</option>
+                    <option value="read">只读</option>
+                    <option value="write">读写</option>
+                    <option value="admin">管理</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- 添加成员表单 -->
+              <div class="mb-6 border border-apple-gray-border-secondary dark:border-gray-700 rounded-lg p-4">
+                <h4 class="text-md font-medium text-apple-gray-text-primary dark:text-white mb-3">添加成员</h4>
+                
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                  <div class="flex-1">
+                <select 
+                  v-model="userToAdd" 
+                      class="input bg-apple-gray-background-light dark:bg-gray-700 w-full"
+                >
+                  <option value="">-- 选择用户 --</option>
+                  <option v-for="user in usersNotInGroup" :key="user.id" :value="user.id">
+                    {{ user.username }} ({{ user.email }})
+                  </option>
+                </select>
+                  </div>
+                
+                  <div class="w-32">
+                <select 
+                  v-model="permissionToAdd" 
+                      class="input bg-apple-gray-background-light dark:bg-gray-700 w-full"
+                >
+                  <option value="read">只读</option>
+                  <option value="write">读写</option>
+                  <option value="admin">管理</option>
+                </select>
+                  </div>
+                
+                  <div>
+                <button 
+                  @click="handleAddUserToGroup" 
+                      class="btn-primary w-full sm:w-auto"
+                  :disabled="!userToAdd || addingUser"
+                >
+                  <span v-if="addingUser">添加中...</span>
+                  <span v-else>添加</span>
+                </button>
+                  </div>
+                </div>
+                
+                <!-- 批量添加模式切换 -->
+                <div class="mt-3 flex items-center">
+                  <button 
+                    @click="batchMode = !batchMode" 
+                    class="text-sm text-apple-blue dark:text-blue-400 hover:underline"
+                  >
+                    {{ batchMode ? '取消批量添加' : '批量添加用户' }}
+                  </button>
+                </div>
+                
+                <!-- 批量添加面板 -->
+                <div v-if="batchMode" class="mt-3 border-t border-apple-gray-border-secondary dark:border-gray-700 pt-3">
+                  <h5 class="text-sm font-medium text-apple-gray-text-primary dark:text-white mb-2">批量选择用户</h5>
+                  
+                  <div class="mb-3">
+                    <input 
+                      v-model="batchSearchQuery" 
+                      type="text" 
+                      placeholder="搜索用户..." 
+                      class="input w-full bg-apple-gray-background-light dark:bg-gray-700 text-sm"
+                    />
+                  </div>
+                  
+                  <div class="max-h-64 overflow-y-auto border border-apple-gray-border-secondary dark:border-gray-700 rounded-lg p-2">
+                    <div 
+                      v-for="user in filteredBatchUsers" 
+                      :key="user.id"
+                      class="flex items-center py-1 px-2 hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50 rounded"
+                    >
+                      <input 
+                        type="checkbox" 
+                        :id="`batch-user-${user.id}`" 
+                        v-model="selectedBatchUsers" 
+                        :value="user.id"
+                        class="h-4 w-4 rounded border-apple-gray-border-secondary dark:border-gray-700 text-apple-blue focus:ring-apple-blue"
+                      />
+                      <label :for="`batch-user-${user.id}`" class="ml-2 text-sm text-apple-gray-text-primary dark:text-white cursor-pointer">
+                        {{ user.username }} ({{ user.email }})
+                      </label>
+                    </div>
+                    
+                    <div v-if="filteredBatchUsers.length === 0" class="py-2 text-center text-sm text-apple-gray-text-secondary dark:text-gray-400">
+                      没有匹配的用户
+                    </div>
+                  </div>
+                  
+                  <div class="mt-3 flex justify-between items-center">
+                    <div class="text-sm text-apple-gray-text-secondary dark:text-gray-400">
+                      已选择 {{ selectedBatchUsers.length }} 个用户
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
                       <select 
-                        v-model="member.permission" 
-                        class="text-sm bg-transparent border-apple-gray-border-secondary dark:border-gray-700 rounded py-1 px-2"
-                        @change="updatePermission(member)"
+                        v-model="batchPermission" 
+                        class="input bg-apple-gray-background-light dark:bg-gray-700 text-sm"
                       >
                         <option value="read">只读</option>
                         <option value="write">读写</option>
                         <option value="admin">管理</option>
                       </select>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                      
                       <button 
-                        @click="handleRemoveUserFromGroup(member.user_id)" 
-                        class="text-red-600 hover:text-red-700 transition-colors text-sm"
-                        :disabled="member.removing"
+                        @click="handleBatchAddUsers" 
+                        class="btn-primary text-sm"
+                        :disabled="selectedBatchUsers.length === 0 || batchAdding"
                       >
-                        <span v-if="member.removing">移除中...</span>
-                        <span v-else>移除</span>
+                        <span v-if="batchAdding">添加中...</span>
+                        <span v-else>批量添加</span>
                       </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 分组成员列表 -->
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-apple-gray-border-secondary dark:divide-gray-700">
+                  <thead>
+                    <tr>
+                      <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">用户</th>
+                      <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">邮箱</th>
+                      <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">权限</th>
+                      <th class="px-6 py-3 bg-apple-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-apple-gray-text-secondary uppercase tracking-wider">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-apple-gray-border-secondary dark:divide-gray-700">
+                    <tr v-if="loadingGroupUsers" class="text-center">
+                      <td colspan="4" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">加载中...</td>
+                    </tr>
+                    
+                    <tr v-else-if="filteredGroupUsers.length === 0" class="text-center">
+                      <td colspan="4" class="px-6 py-8 text-apple-gray-text-secondary dark:text-gray-400">
+                        {{ groupUsers.length === 0 ? '该分组暂无成员' : '没有匹配的成员' }}
+                      </td>
+                    </tr>
+                    
+                    <tr v-for="member in filteredGroupUsers" :key="`${member.user_id}_${selectedGroup}`" class="hover:bg-apple-gray-background-light dark:hover:bg-gray-700/50">
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="w-8 h-8 rounded-full bg-apple-gray-200 dark:bg-gray-700 flex items-center justify-center text-apple-gray-text-primary dark:text-white font-medium text-sm">
+                            {{ getUserInitials(member.user) }}
+                          </div>
+                          <div class="ml-3">
+                            <div class="text-sm font-medium text-apple-gray-text-primary dark:text-white">{{ member.user.username }}</div>
+                            <div class="text-xs text-apple-gray-text-secondary dark:text-gray-400">{{ member.user.first_name }} {{ member.user.last_name }}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-text-secondary dark:text-gray-400">
+                        {{ member.user.email }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <select 
+                          v-model="member.permission" 
+                          class="text-sm bg-transparent border-apple-gray-border-secondary dark:border-gray-700 rounded py-1 px-2"
+                          @change="updatePermission(member)"
+                        >
+                          <option value="read">只读</option>
+                          <option value="write">读写</option>
+                          <option value="admin">管理</option>
+                        </select>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <button 
+                          @click="handleRemoveUserFromGroup(member.user_id)" 
+                          class="text-red-600 hover:text-red-700 transition-colors text-sm"
+                          :disabled="member.removing"
+                        >
+                          <span v-if="member.removing">移除中...</span>
+                          <span v-else>移除</span>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

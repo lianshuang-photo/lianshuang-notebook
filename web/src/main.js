@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { MotionPlugin } from '@vueuse/motion'
 import App from './App.vue'
 import router from './router'
 import './assets/main.css'
@@ -176,9 +177,17 @@ darkModeHighlightStyle.textContent = `
 `
 document.head.appendChild(darkModeHighlightStyle)
 
+// 创建Vue应用实例
 const app = createApp(App)
 
+// 使用Pinia状态管理
 app.use(createPinia())
+
+// 使用Vue Router
 app.use(router)
 
+// 使用VueUse Motion动画库
+app.use(MotionPlugin)
+
+// 挂载应用
 app.mount('#app') 

@@ -45,6 +45,12 @@
               </h1>
             </div>
             <div class="flex space-x-3">
+              <NoteExportImport 
+                :note="note" 
+                :content-element="contentRef" 
+                @import-success="handleImportSuccess" 
+                class="flex space-x-2"
+              />
               <button 
                 @click="getSummary" 
                 class="btn-secondary flex items-center"
@@ -87,7 +93,7 @@
 
         <!-- 笔记内容 -->
         <div class="content-block mb-6">
-          <div class="markdown-content px-6 py-4">
+          <div ref="contentRef" class="markdown-content px-6 py-4">
             <MarkdownRenderer :content="note.content" />
           </div>
         </div>
@@ -163,13 +169,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useNoteStore } from '@/store/note'
 import { useAIStore } from '@/store/ai'
+import { useToast } from '@/composables/useToast'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import NoteExportImport from '@/components/NoteExportImport.vue'
 import hljs from 'highlight.js'
 
 const route = useRoute()
 const router = useRouter()
 const noteStore = useNoteStore()
 const aiStore = useAIStore()
+const { showToast } = useToast()
 
 const loading = ref(true)
 const aiLoading = ref(false)
@@ -178,6 +187,7 @@ const noteSummary = ref(null)
 const question = ref('')
 const aiQuestions = ref([])
 const conversation = ref(null)
+const contentRef = ref(null)
 
 // 初始化
 onMounted(async () => {
@@ -229,7 +239,7 @@ const getSummary = async () => {
 
 // 向AI提问
 const askQuestion = async () => {
-  if (!note.value || aiLoading.value || !question.value.trim()) return
+  if (!note.value || aiLoading.value || !question.trim()) return
   
   aiLoading.value = true
   const currentQuestion = question.value
@@ -248,7 +258,7 @@ const askQuestion = async () => {
       conversation.value = aiStore.currentConversation.id
     }
     
-    // 清空问题
+    // 清空问题输入
     question.value = ''
   } catch (error) {
     console.error('提问失败:', error)
@@ -256,5 +266,10 @@ const askQuestion = async () => {
   } finally {
     aiLoading.value = false
   }
+}
+
+// 处理笔记导入成功
+const handleImportSuccess = (count) => {
+  showToast(`成功导入 ${count} 个笔记`, 'success')
 }
 </script> 

@@ -6,71 +6,129 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('@/views/DashboardView.vue')
+      component: () => import('@/views/DashboardView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'fade' 
+      }
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/views/LoginView.vue')
+      component: () => import('@/views/LoginView.vue'),
+      meta: { 
+        requiresAuth: false,
+        transition: 'fade' 
+      }
     },
     {
       path: '/register',
       name: 'register',
-      component: () => import('@/views/RegisterView.vue')
+      component: () => import('@/views/RegisterView.vue'),
+      meta: { 
+        requiresAuth: false,
+        transition: 'fade' 
+      }
     },
     {
       path: '/notes',
       name: 'notes',
-      component: () => import('@/views/NoteListView.vue')
+      component: () => import('@/views/NoteListView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'fade' 
+      }
     },
     {
       path: '/notes/new',
       name: 'new-note',
-      component: () => import('@/views/NoteEditView.vue')
+      component: () => import('@/views/NoteEditView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'slide-left' 
+      }
     },
     {
       path: '/notes/:id',
       name: 'note-detail',
-      component: () => import('@/views/NoteDetailView.vue')
+      component: () => import('@/views/NoteDetailView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'slide-left' 
+      }
     },
     {
       path: '/notes/:id/edit',
       name: 'edit-note',
-      component: () => import('@/views/NoteEditView.vue')
+      component: () => import('@/views/NoteEditView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'slide-left' 
+      }
     },
     {
       path: '/groups',
       name: 'groups',
-      component: () => import('@/views/NoteGroupListView.vue')
+      component: () => import('@/views/NoteGroupListView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'fade' 
+      }
     },
     {
       path: '/groups/:id',
       name: 'group-detail',
       component: () => import('@/views/NoteListView.vue'),
-      props: true
+      props: true,
+      meta: { 
+        requiresAuth: true,
+        transition: 'slide-left' 
+      }
     },
     {
       path: '/ai-assistant',
       name: 'ai-assistant',
-      component: () => import('@/views/AIAssistantView.vue')
+      component: () => import('@/views/AIAssistantView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'fade' 
+      }
     },
     {
       path: '/settings',
       name: 'settings',
-      component: () => import('@/views/UserSettingsView.vue')
+      component: () => import('@/views/UserSettingsView.vue'),
+      meta: { 
+        requiresAuth: true,
+        transition: 'fade' 
+      }
     },
     {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
+      meta: { requiresAuth: true, requiresAdmin: true, transition: 'fade' }
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
-      component: () => import('@/views/NotFoundView.vue')
+      component: () => import('@/views/NotFoundView.vue'),
+      meta: { 
+        requiresAuth: false,
+        transition: 'fade' 
+      }
     }
-  ]
+  ],
+  // 滚动行为
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      // 如果有保存的位置（例如用户使用浏览器的后退按钮），则恢复到该位置
+      return savedPosition
+    } else {
+      // 否则滚动到页面顶部
+      return { top: 0 }
+    }
+  }
 })
 
 // 路由守卫，处理身份验证和管理员访问权限控制
@@ -99,7 +157,7 @@ router.beforeEach((to, from, next) => {
   }
   
   // 处理常规身份验证
-  if (to.path !== '/login' && to.path !== '/register' && !isAuthenticated) {
+  if (to.path !== '/login' && to.path !== '/register' && to.meta.requiresAuth !== false && !isAuthenticated) {
     // 如果用户未登录且访问非登录/注册页面，重定向到登录页
     console.log('未认证，重定向到登录页面')
     next({ path: '/login' })
