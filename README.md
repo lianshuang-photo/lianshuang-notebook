@@ -35,7 +35,20 @@ cd lsnote
 docker-compose up -d
 ```
 
-然后访问 http://localhost
+然后访问 http://localhost:8080
+
+### 单容器部署
+
+如果需要在仅支持单容器的平台（如claw.cloud）上部署：
+
+```bash
+# 构建单容器版本
+docker-compose -f docker-compose.single.yml up -d
+
+# 或者从Docker Hub拉取
+docker pull yourusername/lsnote:latest
+docker run -d -p 8080:80 -e SECRET_KEY=your_secret_key yourusername/lsnote:latest
+```
 
 ### 手动安装
 
@@ -125,6 +138,30 @@ AI_API_KEY=your_api_key_here  # 你的AI API密钥
 volumes:
   - lsnote_data:/app/data/  # 使用命名卷，不要使用本地目录挂载
 ```
+
+## 在claw.cloud上部署
+
+1. 首先，将镜像推送到Docker Hub：
+   ```bash
+   # 修改push_to_dockerhub.sh中的DOCKER_USERNAME为你的用户名
+   ./push_to_dockerhub.sh
+   ```
+
+2. 在claw.cloud部署页面配置：
+   - 镜像名称：`你的用户名/lsnote:latest`
+   - 端口：`80`（容器内端口）
+   - 内存：建议至少`1G`
+   - CPU：建议至少`0.2`核
+   - 环境变量：
+     - `SECRET_KEY`：你的密钥
+     - `DEBUG`：0
+     - `DB_PATH`：/app/data
+     - `AI_API_KEY`：你的AI API密钥（可选）
+
+3. 注意事项：
+   - 确保配置持久存储卷挂载到`/app/data`
+   - 首次访问使用默认管理员账号：`admin/lsnote123`
+   - 出于安全考虑，请在首次登录后立即修改管理员密码
 
 ## 许可证
 
